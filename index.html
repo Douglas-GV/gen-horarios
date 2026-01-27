@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Horarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="Css/styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Generador de horarios</h1>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button class="btn btn-outline-secondary" id="btnNuevoHorario">
+                📅 Crear nuevo horario
+            </button>
+            <button class="btn btn-outline-secondary dropdown-toggle ms-2" data-bs-toggle="dropdown">
+                💾 Guardar como...
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" id="downloadJPG">Descargar como JPG</a></li>
+                <li><a class="dropdown-item" href="#" id="downloadPNG">Descargar como PNG</a></li>
+                <li><a class="dropdown-item" href="#" id="downloadPDF">Descargar como PDF</a></li>
+            </ul>
+            <button class="btn btn-outline-secondary ms-2" id="btnPersonalizar">
+                🎨 Personalizar
+            </button>
+            <button class="btn btn-outline-secondary ms-2" id="btnDarkMode">
+                🌙 Modo Oscuro
+            </button>
+        </div>
+    </nav>
+
+    <!-- Modal de Personalización -->
+    <div class="modal fade" id="personalizarModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">🎨 Personalizar Horario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título del Horario</label>
+                        <input type="text" class="form-control" id="scheduleTitle" placeholder="Ej: HORARIO UNIVERSIDAD, HORARIO GYM, etc.">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tamaño del Título</label>
+                        <select class="form-select" id="titleSize">
+                            <option value="1.5rem">Pequeño</option>
+                            <option value="2rem" selected>Mediano</option>
+                            <option value="2.5rem">Grande</option>
+                            <option value="3rem">Extra Grande</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Color del Título</label>
+                        <input type="color" class="form-control form-control-color w-100" id="titleColor" value="#1976D2">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnAplicarPersonalizacion">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid mt-4">
+        <div class="form-container p-4 mb-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">Nombre del curso:</label>
+                    <input type="text" class="form-control" id="courseName" placeholder="Matemáticas">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Días:</label>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="1" id="dayL">
+                            <label class="form-check-label" for="dayL">L</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="2" id="dayK">
+                            <label class="form-check-label" for="dayK">K</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="3" id="dayM">
+                            <label class="form-check-label" for="dayM">M</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="4" id="dayJ">
+                            <label class="form-check-label" for="dayJ">J</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="5" id="dayV">
+                            <label class="form-check-label" for="dayV">V</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="6" id="dayS">
+                            <label class="form-check-label" for="dayS">S</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="0" id="dayD">
+                            <label class="form-check-label" for="dayD">D</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Desde:</label>
+                    <input type="time" class="form-control" id="timeFrom" value="07:00">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Hasta:</label>
+                    <input type="time" class="form-control" id="timeTo" value="13:50">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Aula/Lab (opcional):</label>
+                    <input type="text" class="form-control" id="courseRoom" placeholder="Lab 302">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Modalidad:</label>
+                    <select class="form-select" id="courseModality">
+                        <option value="">Sin especificar</option>
+                        <option value="Presencial">Presencial 🏫</option>
+                        <option value="Virtual">Virtual 💻</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Color:</label>
+                    <input type="color" class="form-control form-control-color w-100" id="courseColor" value="#dc3545">
+                </div>
+                <div class="col-md-1">
+                    <button class="btn btn-primary w-100" id="btnAgregar">Agregar</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="scheduleTable" class="table-responsive">
+            <div id="customTitle" class="custom-schedule-title"></div>
+            <table class="table table-bordered schedule-table">
+                <thead>
+                    <tr>
+                        <th class="hours-column">Horas</th>
+                        <th>(L) Lunes</th>
+                        <th>(K) Martes</th>
+                        <th>(M) Miércoles</th>
+                        <th>(J) Jueves</th>
+                        <th>(V) Viernes</th>
+                        <th>(S) Sábado</th>
+                        <th>(D) Domingo</th>
+                    </tr>
+                </thead>
+                <tbody id="scheduleBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="Js/script.js"></script>
+</body>
+</html>
