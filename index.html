@@ -5,7 +5,260 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de Horarios</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="Css/styles.css">
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f8f9fa;
+    color: #212529;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+body.dark-mode { background-color: #1a1a1a; color: #e0e0e0; }
+body.dark-mode .navbar { background-color: #2d2d2d !important; border-bottom-color: #404040; }
+body.dark-mode .form-container { background: linear-gradient(135deg, #1565C0, #0D47A1); }
+body.dark-mode .schedule-table { background-color: #2d2d2d; }
+body.dark-mode .schedule-table tbody td { background-color: #242424; border-color: #404040; }
+body.dark-mode .schedule-table tbody tr:nth-child(even) td:not(.hours-column) { background-color: #2d2d2d; }
+body.dark-mode .schedule-table tbody tr:hover td:not(.hours-column) { background-color: #353535; }
+body.dark-mode .btn-outline-secondary { color: #e0e0e0; border-color: #555; }
+body.dark-mode .btn-outline-secondary:hover { background-color: #1976D2; border-color: #1976D2; }
+body.dark-mode .modal-content { background-color: #2d2d2d; color: #e0e0e0; }
+body.dark-mode .form-control,
+body.dark-mode .form-select { background-color: #3d3d3d; color: #e0e0e0; border-color: #555; }
+.custom-schedule-title {
+    text-align: center; font-weight: 700; margin: 30px 0 20px 0;
+    padding: 20px; letter-spacing: 1px; text-transform: uppercase; display: none;
+}
+.custom-schedule-title.active { display: block; }
+.header {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white; padding: 24px; text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.header h1 { margin: 0; font-size: 1.75rem; font-weight: 600; letter-spacing: -0.5px; }
+.navbar {
+    background-color: #ffffff !important; border-bottom: 1px solid #e0e0e0;
+    padding: 16px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.navbar .btn { font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 6px; transition: all 0.2s ease; }
+.navbar .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.form-container {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    border-radius: 12px; color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 24px;
+}
+.form-container label { font-weight: 600; margin-bottom: 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-container .form-control,
+.form-container .form-select { border-radius: 6px; border: none; padding: 10px 14px; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.form-check-label { font-size: 13px; font-weight: 600; margin-left: 6px; }
+.schedule-table {
+    background-color: white; margin-top: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-radius: 12px; overflow: hidden; border: none;
+}
+.schedule-table thead th {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white; text-align: center; padding: 16px;
+    font-weight: 600; font-size: 14px; border: none; letter-spacing: 0.3px;
+}
+.schedule-table .hours-column {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+    color: white; font-weight: 600; font-size: 13px;
+    min-width: 120px; letter-spacing: 0.3px;
+}
+.schedule-table tbody td {
+    padding: 0; text-align: center; vertical-align: middle;
+    border: 1px solid #e0e0e0; min-height: 60px; height: 60px;
+    position: relative; background-color: #fafafa;
+}
+.schedule-table tbody tr:nth-child(even) td:not(.hours-column) { background-color: #ffffff; }
+.schedule-table tbody tr:hover td:not(.hours-column) { background-color: #f5f5f5; }
+
+/* =============================================
+   COURSE CELL — FIX: overflow hidden + flex correcto
+   ============================================= */
+.course-cell {
+    color: white;
+    font-weight: 600;
+    padding: 0.4rem 0.3rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    /* CLAVE: overflow hidden evita que el ícono se escape */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* justify-content: space-between para que el nombre quede arriba
+       y la info (room + ícono) quede abajo, sin salirse */
+    justify-content: space-between;
+    text-align: center;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    border-radius: 0;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    gap: 0.25rem;
+}
+.course-cell:hover {
+    opacity: 0.9; transform: scale(1.02);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.3); z-index: 10;
+}
+
+/* Nombre del curso: ocupa el espacio disponible y se centra */
+.course-name {
+    font-size: clamp(0.7rem, 1.5vw, 1rem);
+    font-weight: 700;
+    line-height: 1.15;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0.15rem 0.2rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+    width: 100%;
+    /* Flex-grow para que empuje la info hacia abajo */
+    flex: 1;
+}
+
+/* Info bar (room + modality) — siempre pegada al fondo */
+.course-info {
+    display: flex;
+    flex-direction: row;
+    gap: 0.3rem;
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    font-weight: 600;
+    line-height: 1.1;
+    padding: 0.15rem 0.3rem;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    width: calc(100% - 0.4rem);
+    margin: 0 0.2rem;
+    /* NO crece, se queda compacta */
+    flex-shrink: 0;
+}
+.course-room {
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    font-size: clamp(0.55rem, 1vw, 0.75rem);
+    white-space: nowrap; font-weight: 600; flex-shrink: 0;
+}
+.course-modality {
+    /* Tamaño fijo pequeño — nunca más grande que 1rem */
+    font-size: clamp(0.75rem, 1.3vw, 1rem);
+    line-height: 1;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
+}
+
+/* Formato compacto para 1-2 bloques */
+.course-compact {
+    font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+    font-weight: 600;
+    line-height: 1.25;
+    padding: 0.25rem 0.2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.15rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+    width: 100%;
+    /* overflow hidden aquí también */
+    overflow: hidden;
+}
+
+.btn-primary {
+    background-color: #fff; color: #2196F3; border: 2px solid #fff;
+    font-weight: 600; transition: all 0.2s ease; border-radius: 6px; padding: 10px 20px;
+}
+.btn-primary:hover {
+    background-color: #f8f9fa; color: #1976D2; border-color: #f8f9fa;
+    transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.form-control-color { height: 45px; cursor: pointer; border: 2px solid white; border-radius: 6px; }
+.btn-outline-secondary {
+    border-radius: 6px; transition: all 0.2s ease; font-weight: 500; border: 1px solid #dee2e6;
+}
+.btn-outline-secondary:hover {
+    background-color: #2196F3; border-color: #2196F3; color: white;
+    transform: translateY(-1px); box-shadow: 0 2px 8px rgba(33,150,243,0.3);
+}
+.dropdown-menu { border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: none; padding: 8px; }
+.dropdown-item { border-radius: 6px; padding: 10px 16px; font-size: 14px; font-weight: 500; transition: all 0.2s ease; }
+.dropdown-item:hover { background-color: #2196F3; color: white; }
+.container-fluid { padding: 0 32px; }
+input[type="time"] { position: relative; padding: 10px 14px; padding-right: 40px; font-size: 14px; font-weight: 500; }
+input[type="time"]::-webkit-calendar-picker-indicator {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%232196F3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>') no-repeat center;
+    background-size: 20px; cursor: pointer; position: absolute; right: 10px; width: 24px; height: 24px;
+}
+body.dark-mode input[type="time"]::-webkit-calendar-picker-indicator {
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%2364B5F6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>') no-repeat center;
+    background-size: 20px;
+}
+
+/* Alertas */
+.custom-alert-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0,0,0,0.5); display: flex;
+    align-items: center; justify-content: center; z-index: 9999; animation: fadeIn 0.2s ease;
+}
+.custom-alert {
+    background: white; border-radius: 16px; padding: 32px;
+    max-width: 450px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: slideIn 0.3s ease;
+}
+body.dark-mode .custom-alert { background: #2d2d2d; color: #e0e0e0; }
+.custom-alert-icon {
+    width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 32px;
+}
+.custom-alert-icon.error { background: linear-gradient(135deg, #f44336, #d32f2f); }
+.custom-alert-icon.warning { background: linear-gradient(135deg, #ff9800, #f57c00); }
+.custom-alert-icon.success { background: linear-gradient(135deg, #4caf50, #388e3c); }
+.custom-alert-icon.info { background: linear-gradient(135deg, #2196f3, #1976d2); }
+.custom-alert-title { font-size: 24px; font-weight: 700; text-align: center; margin-bottom: 12px; color: #212529; }
+body.dark-mode .custom-alert-title { color: #e0e0e0; }
+.custom-alert-message { font-size: 16px; text-align: center; color: #666; margin-bottom: 24px; line-height: 1.5; }
+body.dark-mode .custom-alert-message { color: #b0b0b0; }
+.custom-alert-button {
+    width: 100%; padding: 12px 24px; border: none; border-radius: 8px;
+    font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+    background: linear-gradient(135deg, #2196f3, #1976d2); color: white;
+}
+.custom-alert-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(33,150,243,0.4); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@media print { .header, .navbar, .form-container { display: none; } .schedule-table { box-shadow: none; } }
+@media (max-width: 768px) {
+    .form-container .row { flex-direction: column; }
+    .schedule-table { font-size: 0.7rem; }
+    .schedule-table th, .schedule-table td { padding: 0.4rem 0.2rem; }
+    .course-cell { padding: 0.2rem; }
+    .course-name { font-size: clamp(0.6rem, 2vw, 0.75rem); }
+    .course-compact { font-size: clamp(0.55rem, 1.8vw, 0.7rem); }
+    .course-info { font-size: clamp(0.5rem, 1.5vw, 0.6rem); }
+    .header h1 { font-size: 1.5rem; }
+}
+@media (min-width: 1600px) {
+    .schedule-table tbody td { height: 70px; min-height: 70px; }
+    .course-name { font-size: clamp(0.75rem, 1.2vw, 1rem); }
+    .course-compact { font-size: clamp(0.65rem, 1vw, 0.85rem); }
+}
+    </style>
 </head>
 <body>
     <div class="header">
@@ -14,27 +267,19 @@
 
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container-fluid">
-            <button class="btn btn-outline-secondary" id="btnNuevoHorario">
-                📅 Crear nuevo horario
-            </button>
-            <button class="btn btn-outline-secondary dropdown-toggle ms-2" data-bs-toggle="dropdown">
-                💾 Guardar como...
-            </button>
+            <button class="btn btn-outline-secondary" id="btnNuevoHorario">📅 Crear nuevo horario</button>
+            <button class="btn btn-outline-secondary dropdown-toggle ms-2" data-bs-toggle="dropdown">💾 Guardar como...</button>
             <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="#" id="downloadJPG">Descargar como JPG</a></li>
                 <li><a class="dropdown-item" href="#" id="downloadPNG">Descargar como PNG</a></li>
                 <li><a class="dropdown-item" href="#" id="downloadPDF">Descargar como PDF</a></li>
             </ul>
-            <button class="btn btn-outline-secondary ms-2" id="btnPersonalizar">
-                🎨 Personalizar
-            </button>
-            <button class="btn btn-outline-secondary ms-2" id="btnDarkMode">
-                🌙 Modo Oscuro
-            </button>
+            <button class="btn btn-outline-secondary ms-2" id="btnPersonalizar">🎨 Personalizar</button>
+            <button class="btn btn-outline-secondary ms-2" id="btnDarkMode">🌙 Modo Oscuro</button>
         </div>
     </nav>
 
-    <!-- Modal de Personalización -->
+    <!-- Modal Personalización -->
     <div class="modal fade" id="personalizarModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -79,34 +324,13 @@
                 <div class="col-md-2">
                     <label class="form-label">Días:</label>
                     <div class="d-flex gap-2 flex-wrap">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="1" id="dayL">
-                            <label class="form-check-label" for="dayL">L</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="2" id="dayK">
-                            <label class="form-check-label" for="dayK">K</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="3" id="dayM">
-                            <label class="form-check-label" for="dayM">M</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="4" id="dayJ">
-                            <label class="form-check-label" for="dayJ">J</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="5" id="dayV">
-                            <label class="form-check-label" for="dayV">V</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="6" id="dayS">
-                            <label class="form-check-label" for="dayS">S</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="0" id="dayD">
-                            <label class="form-check-label" for="dayD">D</label>
-                        </div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="1" id="dayL"><label class="form-check-label" for="dayL">L</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="2" id="dayK"><label class="form-check-label" for="dayK">K</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="3" id="dayM"><label class="form-check-label" for="dayM">M</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="4" id="dayJ"><label class="form-check-label" for="dayJ">J</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="5" id="dayV"><label class="form-check-label" for="dayV">V</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="6" id="dayS"><label class="form-check-label" for="dayS">S</label></div>
+                        <div class="form-check"><input class="form-check-input" type="checkbox" value="0" id="dayD"><label class="form-check-label" for="dayD">D</label></div>
                     </div>
                 </div>
                 <div class="col-md-1">
@@ -127,6 +351,7 @@
                         <option value="">Sin especificar</option>
                         <option value="Presencial">Presencial 🏫</option>
                         <option value="Virtual">Virtual 💻</option>
+                        <option value="Híbrido">Híbrido 🔀</option>
                     </select>
                 </div>
                 <div class="col-md-1">
@@ -154,8 +379,7 @@
                         <th>(D) Domingo</th>
                     </tr>
                 </thead>
-                <tbody id="scheduleBody">
-                </tbody>
+                <tbody id="scheduleBody"></tbody>
             </table>
         </div>
     </div>
@@ -163,6 +387,308 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="Js/script.js"></script>
+    <script>
+let courses = [];
+let scheduleSettings = { title: '', titleSize: '2rem', titleColor: '#1976D2' };
+
+// ---- Alertas ----
+function showAlert(message, type = 'error', title = '') {
+    const icons = { error: '❌', warning: '⚠️', success: '✅', info: 'ℹ️' };
+    const titles = { error: title || 'Error', warning: title || 'Advertencia', success: title || 'Éxito', info: title || 'Información' };
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-alert-overlay';
+    overlay.innerHTML = `<div class="custom-alert"><div class="custom-alert-icon ${type}">${icons[type]}</div><div class="custom-alert-title">${titles[type]}</div><div class="custom-alert-message">${message}</div><button class="custom-alert-button">Entendido</button></div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('.custom-alert-button').addEventListener('click', () => { overlay.style.animation = 'fadeIn 0.2s ease reverse'; setTimeout(() => overlay.remove(), 200); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.style.animation = 'fadeIn 0.2s ease reverse'; setTimeout(() => overlay.remove(), 200); } });
+}
+
+function showConfirmDelete(course) {
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-alert-overlay';
+    overlay.innerHTML = `<div class="custom-alert"><div class="custom-alert-icon warning">🗑️</div><div class="custom-alert-title">Eliminar Curso</div><div class="custom-alert-message">¿Estás seguro de que deseas eliminar "${course.name}"?</div><div style="display:flex;gap:10px;"><button class="custom-alert-button" style="background:#6c757d;" id="cancelBtn">Cancelar</button><button class="custom-alert-button" style="background:linear-gradient(135deg,#f44336,#d32f2f);" id="confirmBtn">Eliminar</button></div></div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#confirmBtn').addEventListener('click', () => { removeCourse(course); overlay.remove(); });
+    overlay.querySelector('#cancelBtn').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+// ---- Tiempo ----
+function timeToMinutes(time) { const [h, m] = time.split(':').map(Number); return h * 60 + m; }
+function minutesToTime(minutes) { const h = Math.floor(minutes / 60); const m = minutes % 60; return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`; }
+
+// ---- Validaciones ----
+function hasScheduleConflict(newCourse) {
+    const newStart = timeToMinutes(newCourse.startTime), newEnd = timeToMinutes(newCourse.endTime);
+    const dayNames = {0:'Domingo',1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6:'Sábado'};
+    for (const course of courses) {
+        const common = newCourse.days.filter(d => course.days.includes(d));
+        if (common.length > 0) {
+            const cs = timeToMinutes(course.startTime), ce = timeToMinutes(course.endTime);
+            if (newStart < ce && newEnd > cs) return { hasConflict: true, message: `El horario de "${newCourse.name}" (${newCourse.startTime} - ${newCourse.endTime}) se superpone con "${course.name}" (${course.startTime} - ${course.endTime}) el día ${common.map(d=>dayNames[d]).join(', ')}.` };
+        }
+    }
+    return { hasConflict: false };
+}
+
+function isDuplicateCourse(newCourse) {
+    const dayNames = {0:'Domingo',1:'Lunes',2:'Martes',3:'Miércoles',4:'Jueves',5:'Viernes',6:'Sábado'};
+    for (const course of courses) {
+        const common = newCourse.days.filter(d => course.days.includes(d));
+        if (common.length > 0 && course.name === newCourse.name && course.startTime === newCourse.startTime && course.endTime === newCourse.endTime)
+            return { isDuplicate: true, message: `Ya existe el curso "${newCourse.name}" en el horario ${newCourse.startTime} - ${newCourse.endTime} el día ${common.map(d=>dayNames[d]).join(', ')}.` };
+    }
+    return { isDuplicate: false };
+}
+
+// ---- Time slots ----
+function generateTimeSlots() {
+    if (courses.length === 0) {
+        const slots = [];
+        for (let h = 7; h <= 22; h++) slots.push({ start: `${h.toString().padStart(2,'0')}:00`, end: `${h.toString().padStart(2,'0')}:50` });
+        return slots;
+    }
+    const timeSet = new Set();
+    courses.forEach(c => { timeSet.add(timeToMinutes(c.startTime)); timeSet.add(timeToMinutes(c.endTime)); });
+    const sorted = Array.from(timeSet).sort((a,b) => a-b);
+    const slots = [];
+    for (let i = 0; i < sorted.length - 1; i++) slots.push({ start: minutesToTime(sorted[i]), end: minutesToTime(sorted[i+1]), startMin: sorted[i], endMin: sorted[i+1] });
+    return slots;
+}
+
+function courseSpansSlot(course, sStart, sEnd) { const cs = timeToMinutes(course.startTime), ce = timeToMinutes(course.endTime); return cs <= sStart && ce >= sEnd; }
+function isFirstSlotOfCourse(course, sStart) { return timeToMinutes(course.startTime) === sStart; }
+function countSlotsForCourse(course, allSlots, startIndex) {
+    const ce = timeToMinutes(course.endTime); let count = 0;
+    for (let i = startIndex; i < allSlots.length; i++) { if (allSlots[i].startMin < ce) count++; else break; }
+    return count;
+}
+
+// ---- ICONO de modalidad ----
+function modalityIcon(modality) {
+    if (modality === 'Presencial') return '🏫';
+    if (modality === 'Virtual') return '💻';
+    if (modality === 'Híbrido') return '🔀';
+    return '';
+}
+
+// ---- Render ----
+function renderSchedule() {
+    const tbody = document.getElementById('scheduleBody');
+    tbody.innerHTML = '';
+    if (courses.length === 0) return;
+
+    const timeSlots = generateTimeSlots();
+    const occupiedCells = {};
+
+    timeSlots.forEach((slot, slotIndex) => {
+        const row = document.createElement('tr');
+        const hourCell = document.createElement('td');
+        hourCell.className = 'hours-column';
+        hourCell.textContent = `${slot.start} - ${slot.end}`;
+        row.appendChild(hourCell);
+
+        for (let day = 1; day <= 7; day++) {
+            const actualDay = day === 7 ? 0 : day;
+            const cellKey = `${slotIndex}-${day}`;
+            if (occupiedCells[cellKey]) continue;
+
+            const dayCell = document.createElement('td');
+            let courseAdded = false;
+
+            courses.forEach(course => {
+                if (course.days.includes(actualDay) &&
+                    courseSpansSlot(course, slot.startMin, slot.endMin) &&
+                    isFirstSlotOfCourse(course, slot.startMin)) {
+
+                    const rowSpan = countSlotsForCourse(course, timeSlots, slotIndex);
+                    const isSmallCell = rowSpan <= 2;
+
+                    const courseDiv = document.createElement('div');
+                    courseDiv.className = 'course-cell';
+                    courseDiv.style.backgroundColor = course.color;
+
+                    if (isSmallCell) {
+                        // Formato compacto: todo en un bloque centrado
+                        const compactText = document.createElement('div');
+                        compactText.className = 'course-compact';
+                        compactText.style.justifyContent = 'center';
+
+                        const nameSpan = document.createElement('span');
+                        nameSpan.style.cssText = 'display:block;font-weight:700;';
+                        nameSpan.textContent = course.name;
+                        compactText.appendChild(nameSpan);
+
+                        if (course.room || course.modality) {
+                            const infoSpan = document.createElement('span');
+                            infoSpan.style.cssText = 'display:block;font-size:0.85em;margin-top:0.1rem;';
+                            let infoText = '';
+                            if (course.room) infoText += course.room;
+                            if (course.modality) infoText += (course.room ? ' ' : '') + modalityIcon(course.modality);
+                            infoSpan.textContent = infoText;
+                            compactText.appendChild(infoSpan);
+                        }
+
+                        courseDiv.appendChild(compactText);
+                    } else {
+                        // Formato grande: nombre arriba (flex:1), info abajo pegada
+                        const courseName = document.createElement('div');
+                        courseName.className = 'course-name';
+                        courseName.textContent = course.name;
+                        courseDiv.appendChild(courseName);
+
+                        if (course.room || course.modality) {
+                            const courseInfo = document.createElement('div');
+                            courseInfo.className = 'course-info';
+
+                            if (course.room) {
+                                const roomSpan = document.createElement('span');
+                                roomSpan.className = 'course-room';
+                                roomSpan.textContent = course.room;
+                                courseInfo.appendChild(roomSpan);
+                            } else {
+                                courseInfo.appendChild(document.createElement('span'));
+                            }
+
+                            if (course.modality) {
+                                const modalitySpan = document.createElement('span');
+                                modalitySpan.className = 'course-modality';
+                                modalitySpan.textContent = modalityIcon(course.modality);
+                                courseInfo.appendChild(modalitySpan);
+                            }
+
+                            courseDiv.appendChild(courseInfo);
+                        }
+                    }
+
+                    if (rowSpan > 1) {
+                        dayCell.rowSpan = rowSpan;
+                        for (let i = 1; i < rowSpan; i++) occupiedCells[`${slotIndex + i}-${day}`] = true;
+                    }
+
+                    courseDiv.addEventListener('click', () => showConfirmDelete(course));
+                    dayCell.appendChild(courseDiv);
+                    courseAdded = true;
+                }
+            });
+
+            row.appendChild(dayCell);
+        }
+        tbody.appendChild(row);
+    });
+}
+
+// ---- Agregar curso ----
+function addCourse() {
+    const courseName = document.getElementById('courseName').value.trim();
+    const timeFrom = document.getElementById('timeFrom').value;
+    const timeTo = document.getElementById('timeTo').value;
+    const color = document.getElementById('courseColor').value;
+    const room = document.getElementById('courseRoom').value.trim();
+    const modality = document.getElementById('courseModality').value;
+    const selectedDays = [];
+    ['dayL','dayK','dayM','dayJ','dayV','dayS','dayD'].forEach(id => { const cb = document.getElementById(id); if (cb && cb.checked) selectedDays.push(parseInt(cb.value)); });
+
+    if (!courseName) { showAlert('Por favor, ingresa el nombre del curso.', 'warning', 'Campo Requerido'); return; }
+    if (selectedDays.length === 0) { showAlert('Por favor, selecciona al menos un día de la semana.', 'warning', 'Día Requerido'); return; }
+    if (!timeFrom || !timeTo) { showAlert('Por favor, selecciona las horas de inicio y fin.', 'warning', 'Horario Requerido'); return; }
+    if (timeToMinutes(timeFrom) >= timeToMinutes(timeTo)) { showAlert('La hora de inicio debe ser anterior a la hora de fin.', 'error', 'Horario Inválido'); return; }
+
+    const newCourse = { id: Date.now(), name: courseName, days: selectedDays, startTime: timeFrom, endTime: timeTo, color, room, modality };
+
+    const dup = isDuplicateCourse(newCourse);
+    if (dup.isDuplicate) { showAlert(dup.message, 'warning', 'Curso Duplicado'); return; }
+
+    const conflict = hasScheduleConflict(newCourse);
+    if (conflict.hasConflict) { showAlert(conflict.message, 'error', 'Conflicto de Horario'); return; }
+
+    courses.push(newCourse);
+    renderSchedule();
+    showAlert(`El curso "${courseName}" ha sido agregado exitosamente.`, 'success', '¡Listo!');
+}
+
+function removeCourse(course) {
+    courses = courses.filter(c => c.id !== course.id);
+    renderSchedule();
+    showAlert(`El curso "${course.name}" ha sido eliminado del horario.`, 'info', 'Curso Eliminado');
+}
+
+function createNewSchedule() {
+    if (courses.length > 0) {
+        const overlay = document.createElement('div');
+        overlay.className = 'custom-alert-overlay';
+        overlay.innerHTML = `<div class="custom-alert"><div class="custom-alert-icon warning">⚠️</div><div class="custom-alert-title">Crear Nuevo Horario</div><div class="custom-alert-message">¿Estás seguro? Se perderán todos los cursos actuales.</div><div style="display:flex;gap:10px;"><button class="custom-alert-button" style="background:#6c757d;" id="cancelBtn">Cancelar</button><button class="custom-alert-button" id="confirmBtn">Crear Nuevo</button></div></div>`;
+        document.body.appendChild(overlay);
+        overlay.querySelector('#confirmBtn').addEventListener('click', () => {
+            courses = []; renderSchedule();
+            document.getElementById('courseName').value = '';
+            document.getElementById('courseRoom').value = '';
+            document.getElementById('courseModality').value = '';
+            document.querySelectorAll('.form-check-input').forEach(cb => cb.checked = false);
+            overlay.remove();
+            showAlert('Se ha creado un nuevo horario vacío.', 'success', '¡Listo!');
+        });
+        overlay.querySelector('#cancelBtn').addEventListener('click', () => overlay.remove());
+        overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+    } else {
+        showAlert('El horario ya está vacío. Puedes comenzar a agregar cursos.', 'info', 'Horario Vacío');
+    }
+}
+
+function downloadAsImage(format) {
+    const element = document.getElementById('scheduleTable');
+    if (typeof html2canvas === 'undefined') { showAlert('Error: html2canvas no está cargada.', 'error', 'Error de Sistema'); return; }
+    html2canvas(element, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `horario.${format}`; link.href = canvas.toDataURL(`image/${format}`); link.click();
+        showAlert(`Horario descargado como ${format.toUpperCase()}.`, 'success', 'Descarga Exitosa');
+    });
+}
+
+function downloadAsPDF() {
+    const element = document.getElementById('scheduleTable');
+    if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') { showAlert('Error: librerías no cargadas.', 'error', 'Error de Sistema'); return; }
+    html2canvas(element, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const imgWidth = 280, imgHeight = (canvas.height * imgWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+        pdf.save('horario.pdf');
+        showAlert('Horario descargado como PDF.', 'success', 'Descarga Exitosa');
+    });
+}
+
+function updateScheduleTitle() {
+    const titleElement = document.getElementById('customTitle');
+    if (scheduleSettings.title) {
+        titleElement.textContent = scheduleSettings.title;
+        titleElement.style.fontSize = scheduleSettings.titleSize;
+        titleElement.style.color = scheduleSettings.titleColor;
+        titleElement.classList.add('active');
+    } else { titleElement.classList.remove('active'); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('btnAgregar').addEventListener('click', addCourse);
+    document.getElementById('btnNuevoHorario').addEventListener('click', createNewSchedule);
+    document.getElementById('downloadJPG').addEventListener('click', e => { e.preventDefault(); downloadAsImage('jpeg'); });
+    document.getElementById('downloadPNG').addEventListener('click', e => { e.preventDefault(); downloadAsImage('png'); });
+    document.getElementById('downloadPDF').addEventListener('click', e => { e.preventDefault(); downloadAsPDF(); });
+    document.getElementById('btnDarkMode').addEventListener('click', function() {
+        document.body.classList.toggle('dark-mode');
+        this.textContent = document.body.classList.contains('dark-mode') ? '☀️ Modo Claro' : '🌙 Modo Oscuro';
+    });
+    document.getElementById('btnPersonalizar').addEventListener('click', () => new bootstrap.Modal(document.getElementById('personalizarModal')).show());
+    document.getElementById('btnAplicarPersonalizacion').addEventListener('click', function() {
+        scheduleSettings.title = document.getElementById('scheduleTitle').value.trim();
+        scheduleSettings.titleSize = document.getElementById('titleSize').value;
+        scheduleSettings.titleColor = document.getElementById('titleColor').value;
+        updateScheduleTitle();
+        bootstrap.Modal.getInstance(document.getElementById('personalizarModal')).hide();
+        showAlert('La personalización se ha aplicado correctamente.', 'success', '¡Listo!');
+    });
+    renderSchedule();
+});
+    </script>
 </body>
 </html>
